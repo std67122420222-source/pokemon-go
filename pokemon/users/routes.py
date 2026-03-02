@@ -5,10 +5,12 @@ from flask_login import login_user, logout_user, current_user, login_required
 
 users_bp = Blueprint('users', __name__, template_folder='templates')
 
+
 @users_bp.route('/')
 @login_required
 def index():
   return render_template('users/index.html', title='User Page')
+
 
 @users_bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -18,13 +20,13 @@ def register():
     password = request.form.get('password')
     confirm_password = request.form.get('confirm_password')
 
-    query = db.select(User).where(User.username==username)
+    query = db.select(User).where(User.username == username)
     user = db.session.scalar(query)
     if user:
       flash('Username is already exists!', 'warning')
       return redirect(url_for('users.register'))
     else:
-      query = db.select(User).where(User.email==email)
+      query = db.select(User).where(User.email == email)
       user = db.session.scalar(query)
       if user:
         flash('Email is already exists!', 'warning')
@@ -40,7 +42,9 @@ def register():
         else:
           flash('Your password not match!', 'warning')
           return redirect(url_for('users.register'))
+
   return render_template('users/register.html', title='Register Page')
+
 
 @users_bp.route('/login', methods=['GET', 'POST'])
 def login():
@@ -48,7 +52,7 @@ def login():
     username = request.form.get('username')
     password = request.form.get('password')
 
-    query = db.select(User).where(User.username==username)
+    query = db.select(User).where(User.username == username)
     user = db.session.scalar(query)
     if user:
       if bcrypt.check_password_hash(user.password, password):
@@ -61,13 +65,16 @@ def login():
     else:
       flash('Username is not exists!', 'warning')
       return redirect(url_for('users.login'))
+
   return render_template('users/login.html', title='Login Page')
+
 
 @users_bp.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
   logout_user()
   return redirect(url_for('core.index'))
+
 
 @users_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -76,14 +83,47 @@ def profile():
   if request.method == 'POST':
     firstname = request.form.get('firstname')
     lastname = request.form.get('lastname')
-    if len(firstname)>0 and len(lastname)>0:
+
+    if len(firstname) > 0 and len(lastname) > 0:
       user.firstname = firstname
       user.lastname = lastname
-      db.session.add(user)
       db.session.commit()
       flash('Update profile successful!', 'success')
       return redirect(url_for('users.profile'))
-    
-  return render_template('users/profile.html', 
+
+  return render_template('users/profile.html',
                          title='Profile Page',
                          user=user)
+
+
+# ✅ เพิ่ม Change Password Route
+@users_bp.route('/change_password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+  user = current_user
+
+  if request.method == 'POST':
+    old_password = request.form.get('old_password')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+
+    # ตรวจสอบรหัสผ่านเดิม
+    if not bcrypt.check_password_hash(user.password, old_password):
+      flash('Old password is incorrect!', 'warning')
+      return redirect(url_for('users.change_password'))
+
+    # ตรวจสอบรหัสใหม่ตรงกันไหม
+    if new_password != confirm_password:
+      flash('New password not match!', 'warning')
+      return redirect(url_for('users.change_password'))
+
+    # เปลี่ยนรหัสผ่าน
+    pwd_hash = bcrypt.generate_password_hash(password=new_password).decode('utf-8')
+    user.password = pwd_hash
+    db.session.commit()
+
+    flash('Change password successful!', 'success')
+    return redirect(url_for('users.profile'))
+
+  return render_template('users/change_password.html',
+                         title='Change Password Page')

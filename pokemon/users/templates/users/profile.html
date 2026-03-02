@@ -32,11 +32,18 @@
           </div>
           
           <hr>
-          <div class="col-12">
-            <button type="submit" class="btn btn-outline-secondary">
-              <i class="bi bi-person-square"></i>
-              Update Profile</button>
-          </div>
+<div class="col-12 d-flex gap-2">
+  <button type="submit" class="btn btn-outline-secondary">
+    <i class="bi bi-person-square"></i>
+    Update Profile
+  </button>
+
+  <a href="{{ url_for('users.change_password') }}" 
+     class="btn btn-outline-danger">
+    <i class="bi bi-key-fill"></i>
+    Change Password
+  </a>
+</div>
         </form>
       </div>
     </div>
